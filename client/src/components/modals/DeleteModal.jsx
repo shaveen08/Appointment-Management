@@ -3,7 +3,14 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import axios from "axios";
 import React, { useRef, useState } from "react";
 
-const DeleteModal = ({ isOpen, onClose, endpoint, record, onDeleted }) => {
+const DeleteModal = ({
+  isOpen,
+  onClose,
+  endpoint,
+  record,
+  onDeleted,
+  triggerNotification,
+}) => {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const modalRef = useRef();
@@ -15,9 +22,19 @@ const DeleteModal = ({ isOpen, onClose, endpoint, record, onDeleted }) => {
       await axios.delete(`${endpoint}/${record._id}`);
       onDeleted?.();
       onClose();
+      triggerNotification({
+        type: "warning",
+        message: "Record deleted successfully!",
+        duration: 3000,
+      });
     } catch (err) {
       console.error("Error deleting record:", err);
       setError("Couldn't delete this record. Please try again.");
+      triggerNotification({
+        type: "error",
+        message: "Failed to delete record",
+        duration: 3000,
+      });
     } finally {
       setDeleting(false);
     }

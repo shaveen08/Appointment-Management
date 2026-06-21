@@ -10,6 +10,7 @@ const EditModal = ({
   endpoint,
   record,
   onUpdated,
+  triggerNotification,
 }) => {
   const [formData, setFormData] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -37,8 +38,13 @@ const EditModal = ({
 
     try {
       await axios.put(`${endpoint}/${record._id}`, formData);
-      onUpdated?.(); // tell parent table to refresh
+      onUpdated?.();
       handleClose();
+      triggerNotification({
+        type: "info",
+        message: "Record updated successfully!",
+        duration: 3000,
+      });
     } catch (err) {
       console.error("Error updating record:", err);
       setError("Couldn't update this record. Please try again.");

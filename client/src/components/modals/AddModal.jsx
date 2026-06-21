@@ -3,7 +3,14 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import axios from "axios";
 import React, { useRef, useState } from "react";
 
-const AddModal = ({ isOpen, onClose, fields, endpoint, onAdded }) => {
+const AddModal = ({
+  isOpen,
+  onClose,
+  fields,
+  endpoint,
+  onAdded,
+  triggerNotification,
+}) => {
   const [formData, setFormData] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -37,9 +44,21 @@ const AddModal = ({ isOpen, onClose, fields, endpoint, onAdded }) => {
       await axios.post(endpoint, payload);
       onAdded?.();
       handleClose();
+
+      triggerNotification({
+        type: "success",
+        message: "Record added successfully!",
+        duration: 3000,
+      });
     } catch (err) {
       console.error("Error adding record:", err);
       setError("Couldn't save this record. Please try again.");
+
+      triggerNotification({
+        type: "error",
+        message: "Failed to add record",
+        duration: 3000,
+      });
     } finally {
       setSubmitting(false);
     }

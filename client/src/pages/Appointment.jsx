@@ -25,6 +25,17 @@ const Appointment = () => {
         "Cardiologist",
       ],
     },
+        {
+      name: "status",
+      label: "Status",
+      type: "select",
+      options: [
+        "Pending",
+        "Confirmed",
+        "Completed",
+        "Cancelled",
+      ],
+    },
     { name: "appointmentDate", label: "Appointment Date", type: "date" },
     { name: "appointmentTime", label: "Appointment Time", type: "time" },
     { name: "phone", label: "Phone", type: "number" },

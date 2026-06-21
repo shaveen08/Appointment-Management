@@ -14,9 +14,9 @@ import DeleteModal from "./modals/DeleteModal";
 import FilterModal from "./modals/FilterModal";
 
 const STATUS_STYLES = {
-  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
   confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-  completed: "bg-green-50 text-green-700 border-green-200",
+  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-red-50 text-red-700 border-red-200",
 };
 
@@ -34,7 +34,18 @@ const StatusChip = ({ value }) => {
   );
 };
 
-const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
+// Keys we never want to render as raw columns
+const HIDDEN_KEYS = new Set(["_id", "__v"]);
+
+const Table = ({
+  title,
+  subtitle,
+  fields,
+  filter,
+  endpoint,
+  dataKey,
+  triggerNotification,
+}) => {
   // Modal Actions ------------------------------------------------------------ /
   const [addModal, setAddModal] = useState(false);
   const [filterModal, setFilterModal] = useState(false);
@@ -72,7 +83,10 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
   // ------------------------------------------------------------------------ /
 
   // It will get the data keys to use it as a table head
-  const tableHead = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const tableHead =
+    rows.length > 0
+      ? Object.keys(rows[0]).filter((key) => !HIDDEN_KEYS.has(key))
+      : [];
 
   // Filter Button of Status
   const [selectedFilter, setSelectedFilter] = useState([]);
@@ -104,26 +118,32 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
 
   return (
     <>
-      <div className="h-full w-full max-w-full flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+      <div className="h-full w-full max-w-full flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-5 bg-gray-50 border-b border-gray-100 space-y-4">
+        <div className="px-5 py-4 bg-gray-50 border-b border-gray-100 space-y-4">
           <div>
-            <h2 className="font-semibold text-base text-gray-900">{title}</h2>
-            <p className="text-sm text-gray-500">{subtitle}</p>
+            <h2 className="font-medium text-base text-gray-900">{title}</h2>
+            {subtitle && (
+              <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>
+            )}
           </div>
 
-          <div className="flex h-fit gap-3">
+          <div className="flex h-fit gap-2.5">
             {/* Search */}
             <div className="relative w-full">
-              <div className="absolute top-1/2 -translate-y-1/2 left-2.5">
-                <HugeiconsIcon icon={Search01Icon} size={17} color="#9ca3af" />
+              <div className="absolute top-1/2 -translate-y-1/2 left-2.5 text-gray-400">
+                <HugeiconsIcon
+                  icon={Search01Icon}
+                  size={16}
+                  strokeWidth={1.8}
+                />
               </div>
               <input
                 type="text"
                 placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600 transition"
+                className="w-full bg-white border border-gray-200 rounded-md pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-900/10 focus:border-teal-300 transition"
               />
             </div>
 
@@ -132,9 +152,18 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
               <button
                 type="button"
                 onClick={() => setFilterModal((p) => !p)}
-                className="w-fit py-2 px-4 flex items-center gap-1.5 font-medium text-gray-600 text-sm bg-white hover:bg-gray-50 rounded-md border border-gray-200 transition"
+                className={`w-fit py-2 px-4 flex items-center gap-1.5 font-medium text-sm rounded-md border transition ${
+                  selectedFilter.length > 0
+                    ? "text-teal-700 bg-teal-50 border-teal-200 hover:bg-teal-100"
+                    : "text-gray-600 bg-white hover:bg-gray-50 border-gray-200"
+                }`}
               >
                 Filter
+                {selectedFilter.length > 0 && (
+                  <span className="flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-teal-700 text-white text-[10px] font-semibold">
+                    {selectedFilter.length}
+                  </span>
+                )}
                 <HugeiconsIcon icon={Filter} size={16} strokeWidth={2} />
               </button>
               {filterModal && filter && (
@@ -185,22 +214,39 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
                 <tr>
                   <td
                     colSpan={tableHead.length + 1 || 1}
-                    className="p-8 text-center text-gray-400"
+                    className="p-10 text-center text-gray-400 text-sm"
                   >
                     Loading...
+                  </td>
+                </tr>
+              ) : filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan={tableHead.length + 1 || 1} className="p-10">
+                    <div className="flex flex-col items-center gap-2 text-sm text-center text-gray-500">
+                      <HugeiconsIcon
+                        icon={PackageRemoveIcon}
+                        size={28}
+                        strokeWidth={1.2}
+                        color="#9ca3af"
+                      />
+                      {search
+                        ? "No matching results"
+                        : `No ${dataKey || "records"} found`}
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filteredRows.map((row, index) => (
                   <tr
                     key={row._id || index}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50/60 transition-colors"
                   >
                     {tableHead.map((key) => (
                       <td key={key} className="p-3 text-gray-700">
                         {key.toLowerCase() === "status" ? (
                           <StatusChip value={row[key]} />
-                        ) : typeof row[key] === "object" ? (
+                        ) : typeof row[key] === "object" &&
+                          row[key] !== null ? (
                           JSON.stringify(row[key])
                         ) : (
                           String(row[key] ?? "-")
@@ -210,29 +256,31 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
 
                     {/* Actions */}
                     <td className="p-3">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
                           onClick={() => setEditRecord(row)}
-                          className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-teal-50 transition"
+                          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-teal-700 hover:bg-teal-50 transition"
+                          aria-label="Edit"
                           title="Edit"
                         >
                           <HugeiconsIcon
                             icon={PencilEdit01Icon}
                             size={16}
-                            color="#0f766e"
+                            strokeWidth={1.8}
                           />
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteRecord(row)}
-                          className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-red-50 transition"
+                          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                          aria-label="Delete"
                           title="Delete"
                         >
                           <HugeiconsIcon
                             icon={Delete02Icon}
                             size={16}
-                            color="#dc2626"
+                            strokeWidth={1.8}
                           />
                         </button>
                       </div>
@@ -243,21 +291,6 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
             </tbody>
           </table>
         </div>
-
-        {/* Empty list alert */}
-        {!loading && filteredRows.length === 0 && (
-          <div className="flex flex-col items-center gap-2 p-8 text-sm text-center text-gray-500">
-            <HugeiconsIcon
-              icon={PackageRemoveIcon}
-              size={32}
-              strokeWidth={1.2}
-              color="#9ca3af"
-            />
-            {search
-              ? "No matching results"
-              : `No ${dataKey || "records"} found`}
-          </div>
-        )}
       </div>
 
       {/* Modals */}
@@ -267,6 +300,7 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
         fields={fields}
         endpoint={endpoint}
         onAdded={fetchData}
+        triggerNotification={triggerNotification}
       />
 
       <EditModal
@@ -276,6 +310,7 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
         endpoint={endpoint}
         record={editRecord}
         onUpdated={fetchData}
+        triggerNotification={triggerNotification}
       />
 
       <DeleteModal
@@ -284,6 +319,7 @@ const Table = ({ title, subtitle, fields, filter, endpoint, dataKey }) => {
         endpoint={endpoint}
         record={deleteRecord}
         onDeleted={fetchData}
+        triggerNotification={triggerNotification}
       />
     </>
   );
